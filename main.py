@@ -36,7 +36,6 @@ def writeJson(fn, nd):
 def clearOutput():
     system('cls' if name == 'nt' else 'clear')
     
-
 def displayLogo():
     randomColors = [Fore.RED, Fore.GREEN, Fore.YELLOW, Fore.BLUE, Fore.MAGENTA, Fore.CYAN, Fore.WHITE]
     color = choice(randomColors)
@@ -105,6 +104,7 @@ async def playGame():
             try:
                 obj = json.loads(msg.encode("utf-8"))
             except: pass
+                
             if obj.get('itemId') == 'chat':
                 if debug:
                     outputMessage(f'[DEBUG] Disabling chat.')
