@@ -8,7 +8,7 @@ from colorama import init, Fore, Style
 from datetime import datetime
 from random import choice, uniform
 
-debug = True
+debug = False
 
 init()
 
@@ -87,7 +87,7 @@ async def cooldown():
 async def playGame():
     loginToken = loadJson('config.json')['login_token']
     client = pyhq.HQClient(loginToken)
-    outputMessage(f"[HQ Words] Connected as {Fore.YELLOW}{client.me().username}{Style.RESET_ALL} with a unclaimed balance of {Fore.YELLOW}{client.me().leaderboard.unclaimed}{Style.RESET_ALL}")
+    outputMessage(f"[HQ Words] Connected as {Fore.YELLOW}{client.me().username}{Style.RESET_ALL} with an unclaimed balance of {Fore.YELLOW}{client.me().leaderboard.unclaimed}{Style.RESET_ALL}")
     schedule = client.schedule()
     if debug: outputMessage(f"[DEBUG] {schedule}")
     if not schedule['active'] == True or not schedule['showType'] == 'hq-words':
