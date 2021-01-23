@@ -89,13 +89,18 @@ async def playGame():
     outputMessage(f"[HQ Words] Connected as {Fore.YELLOW}{client.me().username}{Style.RESET_ALL} with an unclaimed balance of {Fore.YELLOW}{client.me().leaderboard.unclaimed}{Style.RESET_ALL}")
     schedule = client.schedule()
     if debug: outputMessage(f"[DEBUG] {schedule}")
-    if not schedule['active'] == True or not schedule['showType'] == 'hq-words':
+    if not schedule['shows'][0]['live']:
         outputMessage(f"[HQ Words] {Fore.YELLOW}Words isn't live.{Style.RESET_ALL}")
         input (f"\n{Fore.CYAN}Hit enter to continue. {Style.RESET_ALL}")
         menuSwitch()
     else:
-        outputMessage(f"[HQ Words] {Fore.YELLOW}It's go time.{Style.RESET_ALL}")
-    broadcastId = schedule['broadcast']['broadcastId']
+        if not schedule['shows'][0]['opt'] == 'hq-words':
+            outputMessage(f"[HQ Words] {Fore.YELLOW}HQ is live, but not Words.{Style.RESET_ALL}")
+            input(f"\n{Fore.CYAN}Hit enter to continue. {Style.RESET_ALL}")
+            menuSwitch()
+        else:
+            outputMessage(f"[HQ Words] {Fore.YELLOW}It's go time.{Style.RESET_ALL}")
+    broadcastId = schedule['shows'][0]['live']['broadcastId']
     websocketURL = client.socket_url()
     subscribed = False
     puzzleState = ''

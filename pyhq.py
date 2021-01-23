@@ -5,6 +5,8 @@ import datetime
 import os
 import time
 
+apiUrl = "https://api-quiz.hype.space"
+
 _first_re = re.compile("(.)([A-Z][a-z]+)")
 _cap_re = re.compile("([a-z0-9])([A-Z])")
 def _to_snake(name):
@@ -83,7 +85,7 @@ class HQClient:
         self.no_ws_requests = no_ws_requests
 
     def get_auth_token(self) -> str:
-        return requests.post("https://api-quiz.hype.space/tokens/", headers=self.headers, data={'token': self.login_token}).json()['authToken']
+        return requests.post(f"{apiUrl}/tokens/", headers=self.headers, json={'token': self.login_token}).json()['authToken']
 
     @property
     def default_headers(self) -> dict:
@@ -97,7 +99,7 @@ class HQClient:
         return "active" in self.schedule()
 
     def make_it_rain(self) -> bool:
-        return requests.post("https://api-quiz.hype.space/easter-eggs/makeItRain", headers=self.default_headers).status_code == 200
+        return requests.post(f"{apiUrl}/easter-eggs/makeItRain", headers=self.default_headers).status_code == 200
 
     def search_users(self, user: str) -> list:
         if self.caching:
@@ -105,7 +107,7 @@ class HQClient:
                 if user in self._cache["search_users"]:
                     if (time.time() - self._cache["search_users"][user]["last_update"]) < self.cache_time:
                         return self._cache["search_users"][user]["value"]
-        response = requests.get("https://api-quiz.hype.space/users?q=" + user, headers=self.default_headers)
+        response = requests.get(f"{apiUrl}/users?q=" + user, headers=self.default_headers)
         ret = []
         for x in response.json()["data"]:
             kwargs = {}
@@ -135,7 +137,7 @@ class HQClient:
                 if user_id in self._cache["user_info"]:
                     if (time.time() - self._cache["user_info"][user_id]["last_update"]) < self.cache_time:
                         return self._cache["user_info"][user_id]["value"]
-        response = requests.get("https://api-quiz.hype.space/users/me", headers=self.default_headers)
+        response = requests.get(f"{apiUrl}/users/me", headers=self.default_headers)
         kwargs = {}
         for k, v in response.json().items():
             kwargs[_to_snake(k)] = v
@@ -150,27 +152,27 @@ class HQClient:
         return ret
 
     def me(self) -> HQMeInfo:
-        response = requests.get("https://api-quiz.hype.space/users/me", headers=self.default_headers)
+        response = requests.get(f"{apiUrl}/users/me", headers=self.default_headers)
         kwargs = {}
         for k, v in response.json().items():
             kwargs[_to_snake(k)] = v
         return HQMeInfo(**kwargs)
 
     def cashout(self, paypal: str) -> bool:
-        return requests.post("https://api-quiz.hype.space/users/me/payouts", headers=self.default_headers, data={"email": paypal}).status_code == 200
+        return requests.post(f"{apiUrl}/users/me/payouts", headers=self.default_headers, json={"email": paypal}).status_code == 200
 
     def unlink(self) -> bool:
-    	return requests.post("https://api-quiz.hype.space/users/me/payouts/unlink", headers=self.default_headers).status_code == 200
+    	return requests.post(f"{apiUrl}/users/me/payouts/unlink", headers=self.default_headers).status_code == 200
 
     def addRefferal(self, refferal: str) -> bool:
-        return requests.patch("https://api-quiz.hype.space/users/me", headers=self.default_headers, data={"referringUsername": refferal}).status_code == 200
+        return requests.patch(f"{apiUrl}/users/me", headers=self.default_headers, json={"referringUsername": refferal}).status_code == 200
 
     def schedule(self) -> dict:
         if self.caching:
             if "schedule" in self._cache:
                 if (time.time() - self._cache["schedule"]["last_update"]) < self.cache_time:
                     return self._cache["schedule"]["value"]
-        ret = requests.get("https://api-quiz.hype.space/shows/now?type=hq", headers=self.default_headers).json()
+        ret = requests.get(f"{apiUrl}/shows/schedule?type=hq", headers=self.default_headers).json()
         if self.caching:
             if "schedule" not in self._cache:
                 self._cache["schedule"] = {}
@@ -181,10 +183,10 @@ class HQClient:
         return ret
 
     def aws_credentials(self) -> dict:
-        return requests.get("https://api-quiz.hype.space/credentials/s3", headers=self.default_headers).json()
+        return requests.get(f"{apiUrl}/credentials/s3", headers=self.default_headers).json()
 
     def delete_avatar(self) -> str:
-        return requests.delete("https://api-quiz.hype.space/users/me/avatarUrl", headers=self.default_headers).json()["avatarUrl"]
+        return requests.delete(f"{apiUrl}/users/me/avatarUrl", headers=self.default_headers).json()["avatarUrl"]
 
     def add_friend(self, something) -> dict:
         if isinstance(something, int):
@@ -196,7 +198,7 @@ class HQClient:
             user_id = search[0].user_id
         elif isinstance(something, HQUserInfo):
             user_id = something.user_id
-        response = requests.post(f"https://api-quiz.hype.space/friends/{user_id}/requests", headers=self.default_headers).json()
+        response = requests.post(f"{apiUrl}/friends/{user_id}/requests", headers=self.default_headers).json()
         return {
             "requested_user": self.user_info(response["requestedUser"]["userId"]),
             "requesting_user": self.user_info(response["requestingUser"]["userId"]),
@@ -211,7 +213,7 @@ class HQClient:
             if not search:
                 raise Exception("user not found")
             user_id = search[0].user_id
-        return requests.get(f"https://api-quiz.hype.space/friends/{user_id}/status", headers=self.default_headers).json()["status"]
+        return requests.get(f"{apiUrl}/friends/{user_id}/status", headers=self.default_headers).json()["status"]
 
     def accept_friend(self, something) -> dict:
         if isinstance(something, int):
@@ -221,7 +223,7 @@ class HQClient:
             if not search:
                 raise Exception("user not found")
             user_id = search[0].user_id
-        response = requests.put(f"https://api-quiz.hype.space/friends/{user_id}/status", headers=self.default_headers, data={
+        response = requests.put(f"{apiUrl}/friends/{user_id}/status", headers=self.default_headers, json={
                 "status": "ACCEPTED"
             }).json()
         return {
@@ -239,14 +241,14 @@ class HQClient:
             if not search:
                 raise Exception("user not found")
             user_id = search[0].user_id
-        return requests.delete(f"https://api-quiz.hype.space/friends/{user_id}", headers=self.default_headers).json()["result"]
+        return requests.delete(f"{apiUrl}/friends/{user_id}", headers=self.default_headers).json()["result"]
 
     def socket_url(self) -> str:
         if self.no_ws_requests:
             return "wss://hqecho.herokuapp.com/"  # tbh just replace the line its one method no args
         x = self.schedule()
-        if x["active"]:
-            return x["broadcast"]["socketUrl"].replace("https", "wss")
+        if x["shows"][0]["live"]:
+            return x["shows"][0]["live"]["socketUrl"].replace("https", "wss")
 
     def generate_subscribe(self) -> str:
         if not self.no_ws_requests:
@@ -288,7 +290,7 @@ class HQClient:
 
 def verify(phone: str) -> str:
     try:
-        return requests.post("https://api-quiz.hype.space/verifications", data={
+        return requests.post(f"{apiUrl}/verifications", json={
             "method": "sms",
             "phone": phone
         }, headers={"x-hq-client": "Android/1.6.2", "user-agent": "okhttp/3.8.0"}).json()["verificationId"]
@@ -297,15 +299,15 @@ def verify(phone: str) -> str:
 
 
 def submit_code(verification_id: str, code: str) -> dict:
-    return requests.post("https://api-quiz.hype.space/verifications/" + verification_id, data={"code": code}).json()
+    return requests.post(f"{apiUrl}/verifications/" + verification_id, json={"code": code}).json()
 
 
 def username_available(username: str) -> bool:
-    return not bool(requests.post("https://api-quiz.hype.space/usernames/available", data={"username": username}).json())
+    return not bool(requests.post(f"{apiUrl}/usernames/available", json={"username": username}).json())
 
 
 def create_user(username: str, verification_id: str, region: str="US", language: str="en"):
-    return requests.post("https://api-quiz.hype.space/users", data={
+    return requests.post(f"{apiUrl}/users", json={
         "country": region,
         "language": language,
         "username": username,
